@@ -1,0 +1,51 @@
+---
+# tasks file for install_app
+- ping: ~
+
+- name: Update APT package manager repositories cache
+  become: true
+  apt:
+    update_cache: yes
+
+- name: Install dependencies
+  apt: update_cache=yes
+  apt: 
+    name='{{ item }}' state=present
+  with_items: '{{ initDependencies }}'
+  tags:
+    - packages
+
+- name: Upgrade pip
+  pip: name=pip state=latest
+  tags:
+    - packages
+
+- name: Install MySQL database
+  apt:
+    name: '{{ item }}'
+    state:  present
+  with_items: '{{ sqlItems }}'
+
+- name: Start Mysql Service
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+
+- name: Create Application Database
+  mysql_db: name={{ db_name }} state=present
+
+- name: Create Application DB User
+  mysql_user: name={{ db_user }} password={{ db_password }} priv='*.*:ALL' host='%' state='present'
+
+- name: Install Python Flask dependencies
+  pip:
+    name: "{{ item }}"
+    state: present
+  with_items: '{{ flaskItems }}'
+
+- name: Copy web-server code
+  copy: src=app.py dest=/opt/app.py
+
+- name: Start web-application
+  shell: FLASK_APP=/opt/app.py nohup flask run --host=0.0.0.0 &

@@ -1,0 +1,17 @@
+---
+- name: Create AWS infrastructure EC2 instance
+  hosts: localhost
+  connection: local
+  become: yes
+  roles:
+    - provisioning_ec2
+
+- name: Demo for Installing app using Role
+  hosts: webservers
+  become: yes
+  remote_user: ubuntu
+  environment:
+    ANSIBLE_CONFIG: "ansible.cfg"
+  roles:
+    - app_install
+...
